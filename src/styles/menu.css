@@ -1,0 +1,21 @@
+.menu {
+    width: 100%;
+    height: 100px;
+    box-shadow: var(--box-shadow);
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: var(--menu-background-color);
+}
+
+.menu__button {
+    padding: var(--padding-button);
+    background: var(--menu-button-background-color);
+    margin: 1em 0 1em 4em;
+    transition: box-shadow 3s;
+}
+
+.menu__button:hover {
+    cursor: pointer;
+    box-shadow: var(--box-shadow-animation)
+}

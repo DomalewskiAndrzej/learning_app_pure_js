@@ -1,0 +1,12 @@
+:root {
+    --box-shadow: 8px 8px 19px -13px rgba(66, 68, 90, 1);
+    --box-shadow-animation: 8px 8px 30px 0px rgba(66, 68, 90, 1);
+    --border-radius: 25px;
+    --border: 2px solid silver;
+    --menu-background-color: rgb(141,179,141);
+    --menu-button-background-color: linear-gradient(90deg, rgba(141, 179, 141, 1) 0%, rgba(141, 214, 141, 1) 35%, rgba(132, 187, 109, 1) 100%);
+    --padding: 2em;
+    --padding-button: 1em;
+    --padding-small: 5px;
+    --margin-small: 1em;
+}

@@ -1,0 +1,30 @@
+.item {
+    list-style: none;
+    width: 80%;
+    min-height: 4em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    border: var(--border);
+    border-radius: var(--border-radius);
+    padding: var(--padding-small);
+    cursor: move;
+    margin: var(--margin-small) 0;
+}
+
+.item__description {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.item__buttons {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+}
+
+.item__buttons > button {
+    padding: var(--padding-small);
+}
