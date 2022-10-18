@@ -1,62 +1,85 @@
 import { Storage } from "../storage/storage";
-import { Item } from "../utils/interfaces/item.interface";
-import { ItemModelFunctionNames } from "../utils/enums/item-model-function-names.enum";
-import { StorageNames } from "../utils/enums/storage-names.enum";
+import { Item } from "../shared/utils/interfaces/item.interface";
+import { ObserveItemChanges } from "../shared/observe-item-changes/observe-item-changes";
+import { ObserveArrayChangesNames } from "../shared/utils/enums/observe-array-changes-names.enum";
+import { SectionNames } from "../shared/utils/enums/section-names.enum";
+import { v4 as uuidv4 } from "uuid";
+
+const storage = new Storage();
+const observeItemChanges = new ObserveItemChanges();
 
 export class ItemModel {
-  private _items: Item[] = [];
-  private _functions: { [key: string]: Function } = {};
+  private readonly _items: Item[] = [];
+  private _itemsProxy: Item[] = new Proxy(
+    this._items,
+    observeItemChanges.onArrayChange(this.changeDetectionFunction)
+  );
 
-  constructor(private storage: Storage) {
+  constructor(private changeDetectionFunction: Function) {
     this.setDataFromStorage();
   }
 
-  initItemModel(onChangeFn: Function) {
-    this.initChangeDetection(onChangeFn);
+  public getItems(): Item[] {
+    return this._itemsProxy[ObserveArrayChangesNames.get];
   }
 
-  getItems(): Item[] {
-    return this._items;
+  public getItemsLength(): number {
+    return this._itemsProxy[ObserveArrayChangesNames.getLength];
   }
 
-  getItemsLength(): number {
-    return this._items.length;
+  public addManyItems(items: Item[]) {
+    items.forEach((item) => this.addItem(item));
   }
 
-  addMany(arr: Item[]) {
-    if (!arr.length) return;
-    this._items = [...this._items, ...arr];
+  public addItem(item: Item) {
+    this._itemsProxy.push(item);
   }
 
-  addOne(obj: Item) {
-    if (!obj) return;
-    this._items = [...this._items, obj];
+  public addNewItem() {
+    this.addItem(this.generateNewItem());
   }
 
-  update(obj: Item) {
-    if (!obj) return;
-    this._items.map((item) => (item.id === obj.id ? obj : item));
+  public updateOneItem(uuid: string, description: string) {
+    const itemToUpdate: Item = this._itemsProxy.find(
+      (item) => item?.uuid === uuid
+    );
+    if (!itemToUpdate) return;
+
+    this._itemsProxy[this._itemsProxy.indexOf(itemToUpdate)] = {
+      ...itemToUpdate,
+      description,
+      state: "update",
+    };
   }
 
-  delete(id: number) {
-    if (!id) return;
-    this._items = this._items.filter((item) => item.id !== id);
+  public deleteOneItem(id: string) {
+    const elementToDelete = this._itemsProxy.find((item) => item?.uuid === id);
+    if (!elementToDelete) return;
+
+    this._itemsProxy.splice(
+      this.getItems().indexOf(elementToDelete),
+      1,
+      elementToDelete
+    );
   }
 
-  setDataFromStorage() {
-    this.addMany(this.storage.getDataFromStorage(StorageNames.data));
+  private setDataFromStorage() {
+    const data: Item[] = storage.getItemsFromStorage();
+    if (data?.length) {
+      this.addManyItems(
+        data.sort((a: Item, b: Item) =>
+          a?.id.toString().localeCompare(b?.id.toString())
+        )
+      );
+    }
   }
 
-  initChangeDetection(onChangeFn: Function) {
-    Object.keys(ItemModelFunctionNames).forEach((name) => {
-      this._functions[name] = ItemModel.prototype[name];
-      ItemModel.prototype[name] = (value: string | Item | Item[]) => {
-        if (value && !!value[0]) {
-          this._functions[name].bind(this)(value);
-          onChangeFn.bind(this)(name, value);
-          this.storage.updateStorage(this.getItems(), StorageNames.data);
-        }
-      };
-    });
+  private generateNewItem(): Item {
+    return {
+      uuid: uuidv4(),
+      id: this.getItemsLength() + 1,
+      description: "",
+      section: SectionNames.new,
+    };
   }
 }

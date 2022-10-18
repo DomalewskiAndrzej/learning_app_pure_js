@@ -1,76 +1,68 @@
-import { APP_CONFIG } from "../utils/const/app-config.const";
-import { ObserveDOM } from "../observe-dom/observe-dom";
+import { ObserveDOM } from "../shared/observe-dom/observe-dom";
 import { ItemListeners } from "./item-listeners";
 import { ItemModel } from "./item-model";
-import { IDS } from "../utils/const/ids.const";
-import { ItemDomRender } from "./item-dom-render";
-import { Item } from "../utils/interfaces/item.interface";
-import { SectionNames } from "../utils/enums/section-names.enum";
-import { ItemModelFunctionNames } from "../utils/enums/item-model-function-names.enum";
+import { ElementId } from "../shared/utils/enums/element-id.enum";
+import { ItemModelActions } from "../shared/utils/enums/item-model-actions.enum";
+import { Item } from "../shared/utils/interfaces/item.interface";
+import { ON_ITEM_CHANGE } from "../shared/utils/mappers/on-item-change.mapper";
+import { Storage } from "../storage/storage";
+
+const storage = new Storage();
 
 export class ItemManagement {
-  constructor(private itemModel: ItemModel) {
-    this.manageItemListeners();
-    itemModel.initItemModel(this.onChange);
-  }
+  itemModel: ItemModel;
 
-  addItem(): void {
-    const id = this.itemModel.getItemsLength() + 1;
-    const newItem: Item = { id, description: "", section: SectionNames.new };
-    this.itemModel.addOne(newItem);
-  }
-
-  deleteItem(id: number) {
-    this.itemModel.delete(id);
-  }
-
-  manageItemListeners(): void {
-    ObserveDOM.observe(
-      document.querySelector(`#${APP_CONFIG.sectionNames.new}`)!,
-      (observer) => {
-        observer.forEach((item) => {
-          item.addedNodes.forEach((node) => {
-            const itemDeleteButton = (node as HTMLElement)?.children?.[
-              IDS.itemButtons
-            ].children[IDS.itemDeleteButton];
-            const itemModeButton = (node as HTMLElement)?.children?.[
-              IDS.itemButtons
-            ].children[IDS.itemModeButton];
-
-            ItemListeners.itemDeleteButton(
-              itemDeleteButton,
-              this.deleteItem.bind(this),
-              node as HTMLElement
-            );
-
-            ItemListeners.itemModeButton(itemModeButton);
-          });
-        });
-      }
+  constructor(section: HTMLElement) {
+    this.manageItemListeners(section).then(
+      () => (this.itemModel = new ItemModel(this.onChange))
     );
   }
 
-  onChange(
-    name: keyof typeof ItemModelFunctionNames,
-    changedData: number | Item | Item[]
-  ) {
-    if (name === ItemModelFunctionNames.addOne) {
-      // ItemDomRender.renderItem(changedData);
-      return;
-    }
-    if (name === ItemModelFunctionNames.addMany) {
-      if (changedData.constructor === Array) {
-        changedData.forEach((item) => {
-          ItemDomRender.renderItem(item);
+  addNewItem(): void {
+    this.itemModel.addNewItem();
+  }
+
+  deleteItem(id: string) {
+    this.itemModel.deleteOneItem(id);
+  }
+
+  updateItem(uuid: string, description: string) {
+    this.itemModel.updateOneItem(uuid, description);
+  }
+
+  manageItemListeners(section: HTMLElement): Promise<void> {
+    return new Promise<void>((resolve) => {
+      ObserveDOM.observe(section, (observer) => {
+        observer.forEach((item) => {
+          item.addedNodes.forEach((node: HTMLElement) => {
+            const itemActionButton: HTMLElement =
+              node?.children?.[ElementId.itemButtons]?.children[
+                ElementId.itemActionButton
+              ];
+
+            const itemModeButton: HTMLElement =
+              node?.children?.[ElementId.itemButtons]?.children[
+                ElementId.itemModeButton
+              ];
+
+            ItemListeners.itemActionButton(
+              itemActionButton,
+              this.deleteItem.bind(this),
+              this.updateItem.bind(this),
+              node
+            );
+
+            ItemListeners.itemModeButton(itemModeButton, node);
+          });
         });
-      }
-      return;
-    }
-    if (name === ItemModelFunctionNames.delete) {
-      if (typeof changedData === "number")
-        ItemDomRender.deleteItem(changedData);
-      return;
-    }
-    // ItemDomRender.updateItem(changedData);
+      });
+      resolve();
+    });
+  }
+
+  onChange(name: ItemModelActions, changedData: string | Item, items: Item[]) {
+    storage.upsertItemStorage(items);
+    // @ts-ignore
+    ON_ITEM_CHANGE[name](changedData);
   }
 }

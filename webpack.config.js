@@ -20,9 +20,14 @@ module.exports = {
     static: {
       directory: path.join(__dirname, ""),
     },
+    hot: true,
     compress: true,
     liveReload: true,
     port: 4201,
+    devMiddleware: {
+      publicPath: "/dist/",
+      writeToDisk: true,
+    },
   },
 
   resolve: {
