@@ -1,4 +1,4 @@
-import { APP_CONFIG } from "../utils/const/app-config.const";
+import { APP_CONFIG } from "../shared/utils/const/app-config.const";
 
 export class SetStyleContent {
   constructor() {

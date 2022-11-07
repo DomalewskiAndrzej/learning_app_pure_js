@@ -1,19 +1,29 @@
-import { BaseContent } from "./base-content/base-content";
 import { ItemManagement } from "./item/item-management";
-import { IDS } from "./utils/const/ids.const";
+import { BaseContent } from "./base-content/base-content";
+import { DocumentElement } from "./shared/observe-dom/document-element";
+import { ItemListeners } from "./item/item-listeners";
 
 export class Application {
-  constructor(
-    private itemManagement: ItemManagement,
-    private baseContent: BaseContent
-  ) {
-    this.addDefaultListeners();
+  itemManagement: ItemManagement;
+
+  constructor() {
+    new BaseContent();
+    DocumentElement.getSectionNew().then((section) => {
+      this.itemManagement = new ItemManagement(section);
+      this.initAddNewItemButton();
+    });
   }
 
-  addDefaultListeners(): void {
-    const button = document.querySelector(IDS.itemAddButton);
-    if (button) {
-      button.addEventListener("click", () => this.itemManagement.addItem());
-    }
+  initAddNewItemButton() {
+    DocumentElement.getAddNewItemButton().then((button) => {
+      this.addClickListenerToButton(button);
+    });
+  }
+
+  addClickListenerToButton(button: HTMLElement): void {
+    ItemListeners.addNewItemButton(
+      button,
+      this.itemManagement.addNewItem.bind(this.itemManagement)
+    );
   }
 }

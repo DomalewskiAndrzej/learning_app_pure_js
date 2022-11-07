@@ -1,11 +1,20 @@
-import { Item } from "../utils/interfaces/item.interface";
+import { Item } from "../shared/utils/interfaces/item.interface";
+import { StorageNames } from "../shared/utils/enums/storage-names.enum";
 
 export class Storage {
-  updateStorage(data: Item[], storageName: string) {
+  upsertItemStorage(items: Item[]): void {
+    this.upsertStorage(items, StorageNames.items);
+  }
+
+  getItemsFromStorage(): Item[] {
+    return this.getDataFromStorage(StorageNames.items) as Item[];
+  }
+
+  private upsertStorage(data: unknown, storageName: string) {
     localStorage.setItem(storageName, JSON.stringify(data));
   }
 
-  getDataFromStorage(storageName: string) {
-    return JSON.parse(localStorage.getItem(storageName)!);
+  private getDataFromStorage(storageName: string): unknown | unknown[] {
+    return JSON.parse(localStorage.getItem(storageName));
   }
 }
